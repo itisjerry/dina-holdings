@@ -1,14 +1,13 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 
-/**
- * Single-file React site for Dina Holdings LLC (Next.js App Router)
- * - Tech-only Unsplash imagery (no people)
- * - Sales-focused copy
- * - Newsletter above Legal/Contact in footer (inline row)
- * - Legal pages are links only (no cards)
- * - Sparkline math fixed: (max - min) || 1 (no "or")
- */
+// Single-file React site for Dina Holdings LLC
+// - Clean JSX (no stray backslashes), fully closed tags
+// - Tech-only Unsplash imagery (no people)
+// - Newsletter sits ABOVE Legal + Contact in footer (inline row)
+// - Legal pages are links in footer only
+// - Accessible, responsive, sales-oriented copy
 
 const baseCSS = `
 :root{--bg:#ffffff;--fg:#0f172a;--muted:#5b6b7c;--primary:#0F4C81;--secondary:#38B6FF;--card:#ffffff;--ring:rgba(15,76,129,.28)}
@@ -59,14 +58,15 @@ function useTheme(){
 
 function useScrollSpy(ids:string[]){
   const [active,setActive]=useState('#'+ids[0]);
+  const key = Array.isArray(ids) ? ids.join(',') : String(ids); // stable dep key
   useEffect(()=>{
     const obs=new IntersectionObserver((entries)=>{
       const vis=entries.filter(e=>e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio);
-      if(vis[0]) setActive('#'+vis[0].target.id);
+      if(vis[0]) setActive('#'+(vis[0].target as HTMLElement).id);
     },{rootMargin:"-45% 0% -50% 0%",threshold:[0,0.25,0.5,0.75,1]});
     ids.forEach(id=>{const el=document.getElementById(id); if(el) obs.observe(el);});
     return ()=>obs.disconnect();
-  },[ids.join(',')]);
+  },[key]);
   return active;
 }
 
@@ -81,13 +81,13 @@ const IMGS={
   cs3:"https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80",
 };
 
-const CASES = [
+const CASES=[
   {title:"Apex Logistics - Ops Portal",cat:"Web App",img:IMGS.cs1,summary:"Replaced 17 spreadsheets with one source of truth.",metrics:["Admin hours -47%","Invoice errors -32%","On time +11%"],stack:['Next.js','Node','Postgres','Auth','S3'],challenge:'Manual ops across sheets and emails created delays and errors.',solution:'Consolidated workflows into a role based portal with approvals, exports, and alerts.',impact:'Reduced admin work and improved on time rate.'},
   {title:"Sola Commerce - Headless Storefront",cat:"Ecommerce",img:IMGS.cs2,summary:"Sub 2s LCP on mobile with edge caching and optimized media.",metrics:["Checkout +23%","AOV +18%","Bounce -21%"],stack:['Next.js','Stripe','Headless CMS','Cloudflare'],challenge:'Legacy theme was slow and hard to iterate.',solution:'Headless storefront with server components, image CDNs, and checkout optimizations.',impact:'Faster pages increased conversion and AOV.'},
   {title:"Evergreen Health - Patient Onboarding",cat:"Website",img:IMGS.cs3,summary:"WCAG AA redesign with clear IA and referral flows.",metrics:["Task success +34%","Bounce -28%","Session +41%"],stack:['React','Accessibility','Analytics'],challenge:'Patients struggled to find intake, leading to phone support load.',solution:'Clear IA, forms, and content structure meeting WCAG AA.',impact:'Higher completion and lower support volume.'},
 ];
 
-const FAQS = [
+const FAQS=[
   {q:"How do we reduce risk up front?",a:"We do scope mapping, identify unknowns, set KPI targets, and define success criteria before code begins. No hidden work. No silent assumptions."},
   {q:"What makes your delivery different?",a:"Weekly demo loops. Every slice ships behind feature flags so you never wait 3 weeks for a reveal. You always see progress and you always control direction."},
   {q:"Can you plug into our internal dev team?",a:"Yes. We regularly ship side by side with in house teams. We align to your infra, branching model, ticketing, and engineering rituals so it feels native."},
@@ -242,15 +242,17 @@ function Services(){
 function Results(){
   const tabs=['Performance','Reliability','Security','DX & Ops'];
   const [tab,setTab]=useState('Performance');
-  const data={
+  const data:{
+    [k:string]: {v:string; l:string; spark:number[]}[];
+  }={
     'Performance': [
       {v:'1.3 s',l:'Largest Contentful Paint (mobile)',spark:[650,610,590,540,510,520]},
       {v:'180 ms',l:'Time to First Byte (edge)',spark:[210,205,198,192,186,180]},
-      {v:'0.01',l:'Cumulative Layout Shift',spark:[.06,.05,.03,.02,.02,.01]},
+      {v:'0.01',l:'Cumulative Layout Shift',spark:[0.06,0.05,0.03,0.02,0.02,0.01]},
     ],
     'Reliability': [
       {v:'99.99%',l:'Uptime on managed hosting',spark:[99.9,99.92,99.95,99.97,99.99,99.99]},
-      {v:'-55%',l:'Error rate after instrumentation',spark:[1.0,.95,.82,.6,.52,.45]},
+      {v:'-55%',l:'Error rate after instrumentation',spark:[1.0,0.95,0.82,0.6,0.52,0.45]},
       {v:'< 5 min',l:'Mean time to acknowledge',spark:[14,10,9,7,6,5]},
     ],
     'Security': [
@@ -263,16 +265,12 @@ function Results(){
       {v:'CI/CD',l:'Automated deploy with preview',spark:[20,40,60,80,90,100]},
       {v:'A/B ready',l:'Experiment hooks in place',spark:[10,20,35,55,70,85]},
     ]
-  } as const;
+  };
 
-  // FIXED: use ((max - min) || 1) instead of "or"
   const Spark = ({values}:{values:number[]})=>{
-    const w=140,h=36,p=2;
-    const xs=values.map((_,i)=>i*(w-p*2)/(values.length-1)+p);
-    const ys=(()=>{
-      const max=Math.max(...values), min=Math.min(...values);
-      return values.map(v => h - p - ((v - min) / ((max - min) || 1)) * (h - p * 2));
-    })();
+    const w=140,h=36,p=2; 
+    const xs=values.map((_,i)=>i*(w-p*2)/(values.length-1)+p); 
+    const ys=(()=>{const max=Math.max(...values),min=Math.min(...values);return values.map(v=>h-p-((v-min)/(max-min||1))*(h-p*2));})();
     const d=values.map((v,i)=>`${i?'L':'M'}${xs[i].toFixed(1)},${ys[i].toFixed(1)}`).join(' ');
     return (<svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="spark" aria-hidden="true"><path d={d} fill="none" stroke="currentColor" strokeWidth="2" opacity="0.8"/></svg>);
   };
@@ -291,11 +289,11 @@ function Results(){
           ))}
         </div>
         <div className="grid" style={{gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))'}}>
-          {data[tab as keyof typeof data].map((kpi,idx)=> (
+          {data[tab].map((kpi,idx)=> (
             <article key={idx} className="card" style={{display:'grid',gap:6}}>
               <div className="stat">{kpi.v}</div>
               <div className="label">{kpi.l}</div>
-              <div style={{color:'var(--primary)'}}><Spark values={kpi.spark as number[]}/></div>
+              <div style={{color:'var(--primary)'}}><Spark values={kpi.spark}/></div>
             </article>
           ))}
         </div>
@@ -307,8 +305,8 @@ function Results(){
 
 function Work(){
   const [filter,setFilter]=useState('All');
-  const [open,setOpen]=useState<any>(null);
-  const cats=['All','Website','Web App','Ecommerce'] as const;
+  const [open,setOpen]=useState<null | typeof CASES[number]>(null);
+  const cats=['All','Website','Web App','Ecommerce'];
   const list=filter==='All'?CASES:CASES.filter(c=>c.cat===filter);
   return (
     <section id="work" className="container section">
@@ -346,7 +344,7 @@ function Work(){
                   <div className="badge">{open.cat}</div>
                   <h3 style={{margin:'6px 0',fontWeight:900}}>{open.title}</h3>
                   <p className="small">{open.summary}</p>
-                  {open.stack && <div className="chips">{open.stack.map((s:string)=> <span className="chip" key={s}>{s}</span>)}</div>}
+                  {open.stack && <div className="chips">{open.stack.map(s=> <span className="chip" key={s}>{s}</span>)}</div>}
                   <div className="grid" style={{gridTemplateColumns:'1fr 1fr',marginTop:8}}>
                     <div className="card"><b>Challenge</b><p className="small">{open.challenge}</p></div>
                     <div className="card"><b>Solution</b><p className="small">{open.solution}</p></div>
@@ -395,7 +393,7 @@ function Process(){
 function FAQs(){
   const [open,setOpen]=useState<number[]>([]);
   const toggle=(i:number)=> setOpen(prev=> prev.includes(i)? prev.filter(x=>x!==i) : [...prev,i]);
-  const toBullets=(text:string)=> text.split('. ').filter(Boolean).map(s=> s.replace(/\.$/,'')) .slice(0,6);
+  const toBullets=(text:string)=> text.split(". ").filter(Boolean).map(s=> s.replace(/\.$/, "")) .slice(0,6);
   const LAST = FAQS.length;
   return (
     <section id="faqs" className="container section" aria-labelledby="faqs-title">
@@ -410,10 +408,10 @@ function FAQs(){
           const isOpen=open.includes(i);
           const bullets=toBullets(f.a);
           return (
-            <article key={i} className="card" role="listitem" aria-expanded={isOpen}>
+            <article key={i} className="card" role="listitem">
               <button onClick={()=>toggle(i)} className="btn secondary" style={{width:'100%',justifyContent:'space-between'}} aria-controls={`faq-panel-${i}`} aria-expanded={isOpen}>
                 <span style={{fontWeight:800,textAlign:'left'}}>{f.q}</span>
-                <span>{isOpen? '−' : '+'}</span>
+                <span>{isOpen? "−" : "+"}</span>
               </button>
               <div id={`faq-panel-${i}`} style={{display:isOpen?'block':'none',marginTop:8}}>
                 <ul className="small" style={{margin:0,paddingLeft:18,display:'grid',gap:6}}>
@@ -427,13 +425,13 @@ function FAQs(){
           );
         })}
         {/* Last FAQ styled same as others */}
-        <article className="card" role="listitem" aria-expanded={open.includes(LAST)}>
+        <article className="card" role="listitem">
           <button onClick={()=>toggle(LAST)} className="btn secondary" style={{width:'100%',justifyContent:'space-between'}} aria-controls={`faq-panel-${LAST}`} aria-expanded={open.includes(LAST)}>
             <span style={{fontWeight:800,textAlign:'left'}}>Still have a question?</span>
-            <span>{open.includes(LAST)? '−' : '+'}</span>
+            <span>{open.includes(LAST)? "−" : "+"}</span>
           </button>
           <div id={`faq-panel-${LAST}`} style={{display:open.includes(LAST)?'block':'none',marginTop:8}}>
-            <div className="small">Tell us the context and we'll reply with a precise answer.</div>
+            <div className="small">Tell us the context and we’ll reply with a precise answer.</div>
             <div style={{marginTop:10}}>
               <a className="btn" href="#contact">Get My Answer</a>
             </div>
@@ -449,13 +447,13 @@ function Contact(){
   const [email,setEmail]=useState("");
   const [company,setCompany]=useState("");
   const [type,setType]=useState("Website");
-  const [budget,setBudget]=useState(50);
+  const [budget,setBudget]=useState(50); // thousands
   const [timeline,setTimeline]=useState("4-8 weeks");
   const [nda,setNda]=useState(false);
   const [message,setMessage]=useState("");
   const [files,setFiles]=useState<File[]>([]);
   const [link,setLink]=useState("");
-  const [scopes,setScopes]=useState<Record<string,boolean>>({Login:false,Dashboard:false,CMS:false,Ecommerce:false,Payments:false,Reporting:false,Integrations:false,Multitenant:false,Other:false});
+  const [scopes,setScopes]=useState<{[k:string]:boolean}>({Login:false,Dashboard:false,CMS:false,Ecommerce:false,Payments:false,Reporting:false,Integrations:false,Multitenant:false,Other:false});
 
   const emailValid=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const onSubmit=(e:React.FormEvent)=>{ e.preventDefault(); alert("Thanks. We will send a proposal outline shortly."); };
@@ -573,7 +571,7 @@ function Footer(){
           </div>
           <a className="btn" href="#contact">Start your project</a>
         </div>
-        {/* Newsletter (inline row, above legal + contact) */}
+        {/* Newsletter (moved above legal + contact). Inline row layout */}
         <div style={{justifySelf:'end', width:'min(720px,100%)'}}>
           <h4 style={{margin:'4px 0'}}>Newsletter</h4>
           <form onSubmit={(e)=>{e.preventDefault();alert('Thanks. Please check your inbox.');}} style={{display:'flex',gap:8,marginTop:8}}>
@@ -636,14 +634,14 @@ function BackToTop(){
 }
 
 function CookieConsent(){
-  const [ok,setOk]=useState(()=> localStorage.getItem('cookie-ok')==='1');
+  const [ok,setOk]=useState(()=> (typeof window!=="undefined" && localStorage.getItem('cookie-ok')==='1'));
   if(ok) return null;
   return (
     <div className="card cookie" role="dialog" aria-live="polite">
       <div className="small">We use necessary cookies and anonymous analytics. You can review details in our <a className="link" href="https://www.dinaholdingsllc.net/cookie">Cookie Policy</a>.</div>
       <div style={{marginTop:8,display:'flex',gap:8,justifyContent:'flex-end'}}>
-        <button className="btn secondary" onClick={()=>{setOk(true);localStorage.setItem('cookie-ok','1');}}>Dismiss</button>
-        <button className="btn" onClick={()=>{setOk(true);localStorage.setItem('cookie-ok','1');}}>Accept</button>
+        <button className="btn secondary" onClick={()=>{setOk(true);if(typeof window!=="undefined"){localStorage.setItem('cookie-ok','1');}}}>Dismiss</button>
+        <button className="btn" onClick={()=>{setOk(true);if(typeof window!=="undefined"){localStorage.setItem('cookie-ok','1');}}}>Accept</button>
       </div>
     </div>
   );
