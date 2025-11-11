@@ -612,8 +612,8 @@ function Footer(){
           </div>
           <div>
             <h4 style={{margin:'4px 0'}}>Contact</h4>
-            <address className="small" style={{fontStyle:'normal'}}>6545 Market Ave North, North Canton, OH 44721<br/>
-              <a className="link" href="tel:+12342165249">+1 (234) 216-5249</a><br/>
+            <address className="small" style={{fontStyle:'normal'}}>1209, Mountain Road PL NE STE N Albuquerque, NM 87110<br/>
+              <a className="link" href="tel:+12342165249">+1 (234) 216-5153</a><br/>
               <a className="link" href="mailto:ceo@dinaholdingsllc.net">ceo@dinaholdingsllc.net</a>
             </address>
           </div>
